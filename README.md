@@ -30,6 +30,8 @@ python3 examples/compile.py examples/light_ray.rune
 | 路径 | 内容 |
 |---|---|
 | `docs/language.md` | **源语言参考**（读者入口） |
+| `docs/ROADMAP.md` | **规划书**：定位 B，阶段 / 验收判据 / 天花板 / 退出条件 |
+| `docs/lessons.md` | 经验与教训：方法、六种反复犯的错、引文纪律 |
 | `docs/decisions.md` | 决议表：原文 / 推断 / 设计选择 / 悬置 + 翻案条件 |
 | `docs/open-questions.md` | 开放问题与判据 |
 | `corpus/schema.md` | 语料字段定义 |
