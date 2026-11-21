@@ -1,0 +1,2 @@
+{"template":"projectile","spell":"光射线","element":"光","declared_runes":4,"create":["发光","点"],"create_source":"推断","emit":["发射-1","发射-2"],"corpus_id":"spell:光射线"}
+{"template":"projectile","spell":"丢冰块","element":"冰","declared_runes":4,"create":null,"create_source":"unknown","emit":["发射-1","发射-2"],"corpus_id":"spell:丢冰块"}
