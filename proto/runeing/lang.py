@@ -2,16 +2,17 @@
 
 写法（一行定义一个咒语）：
 
-    光射线 : 光 = 发光 → 点 → 发射 → 发射
+    光射线 : 光 = 发光 -> 点 -> 发射 -> 发射
 
 规则：
 
 - ``名字 : 元素 = 魔文序列``
-- 魔文之间用 ``→`` 连接，方向即连笔方向（末尾 → 开头，第 16 章）
-- ``魔文 × 3`` 表示该魔文重复 3 次
+- 魔文之间用 ``->`` 连接，方向即连笔方向（末尾 -> 开头，第 16 章）
+- ``魔文 * 3`` 表示该魔文重复 3 次
 - ``#`` 之后是注释
 - 一个文件只放一个咒语
 
+**语法符号一律 ASCII。** 标识符用中文，因为它们是原文术语（魔文名、元素名）。
 **源码里没有连笔的具体形状。** 连笔是 (魔文对 × 魔女) 的私有表，
 由施法者补齐，不进源码、不进 IR（第 17 章）。
 """
@@ -21,7 +22,10 @@ import re
 from dataclasses import dataclass
 
 _DEF = re.compile(r"^([^\s:#=]+)\s*:\s*([^\s=#]+)\s*=\s*(.+)$")
-_TIMES = re.compile(r"^(.+?)\s*[×xX*]\s*(\d+)$")
+_TIMES = re.compile(r"^(.+?)\s*[xX*]\s*(\d+)$")
+
+ARROW = "->"
+REPEAT = "*"
 
 
 @dataclass(frozen=True)
@@ -47,7 +51,9 @@ def _expand(part: str) -> list[str]:
         return [part]
     rune, times = m.group(1).strip(), int(m.group(2))
     if not rune:
-        raise ParseError(f"`×` 前缺少魔文：{part}")
+        raise ParseError(f"`{REPEAT}` 前缺少魔文：{part}")
+    if times <= 0:
+        raise ParseError(f"重复次数必须为正：{part}")
     return [rune] * times
 
 
@@ -71,10 +77,10 @@ def parse(text: str) -> SpellSource:
         raise ParseError("缺少 `名字 : 元素 = 魔文序列`")
 
     runes: list[str] = []
-    for part in body.split("→"):
+    for part in body.split(ARROW):
         part = part.strip()
         if not part:
-            raise ParseError("`→` 两侧不能为空")
+            raise ParseError(f"`{ARROW}` 两侧不能为空")
         runes.extend(_expand(part))
 
     return SpellSource(name=name, element=element, runes=tuple(runes))

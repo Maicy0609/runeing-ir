@@ -50,3 +50,22 @@
 `quote` 字段是小说《变成软糯魔女？不对是钢筋大运！》（作者：太阳花田里的树，
 番茄小说）的原文摘录，版权属作者与平台，**不受本仓库许可证覆盖**，仅用于评论与
 技术分析。详见仓库根目录 `NOTICE`。
+
+---
+
+## 附：`templates.jsonl`
+
+与 `corpus.jsonl` 分开存放，只记录**模板实例**，不重复原文。
+
+| 字段 | 说明 |
+|---|---|
+| `template` | 模板名，目前只有 `projectile` |
+| `spell` | 咒语名，需与 `corpus.jsonl` 的 `spell:<名字>` 对应 |
+| `element` | 元素 |
+| `declared_runes` | 原文声明的魔文总数 |
+| `create` | 元素实体段的魔文数组；`null` 表示原文未给 |
+| `create_source` | `原文` / `推断` / `unknown` |
+| `emit` | 发射段的魔文数组 |
+| `corpus_id` | 反向指向 `corpus.jsonl` 的 `id` |
+
+`create: null` 是合法的，表示“原文没写”，不是缺字段。
