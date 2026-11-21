@@ -42,7 +42,14 @@ class SpellSource:
 
 
 class ParseError(ValueError):
-    """源码格式错误。"""
+    """源码格式错误，带行号。"""
+
+    def __init__(self, message: str, line: int = 0, col: int = 1) -> None:
+        self.message = message
+        self.line = line
+        self.col = col
+        where = f"第 {line} 行" if line else ""
+        super().__init__(f"{where}：{message}" if where else message)
 
 
 def _expand(part: str) -> list[str]:
@@ -62,15 +69,15 @@ def parse(text: str) -> SpellSource:
     name: str | None = None
     element: str | None = None
 
-    for raw in text.splitlines():
+    for lineno, raw in enumerate(text.splitlines(), 1):
         line = raw.split("#", 1)[0].strip()
         if not line:
             continue
         m = _DEF.match(line)
         if not m:
-            raise ParseError(f"无法解析：{line}")
+            raise ParseError(f"无法解析：{line}", lineno)
         if body is not None:
-            raise ParseError("一个文件只允许一个咒语")
+            raise ParseError("一个文件只允许一个咒语", lineno)
         name, element, body = m.group(1), m.group(2), m.group(3)
 
     if name is None or element is None or body is None:

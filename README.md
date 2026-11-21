@@ -38,9 +38,10 @@ python3 examples/compile.py examples/light_ray.rune
 | `corpus/corpus.jsonl` | 逐条语料，44 条 |
 | `corpus/templates.jsonl` | 模板实例，2 条 |
 | `corpus/queries.md` | 查询词记录与复测结果 |
-| `examples/` | 可跑样例（3 个 `.rune` + 2 个脚本） |
-| `proto/` | 核心实现 |
+| `examples/` | 可跑样例（4 个 `.rune` + 2 个脚本） |
 | `tools/verify_quotes.py` | 引文逐字校验 |
+| `tools/catalog.py` | 咒语目录：认识哪些、认识多深 |
+| `tools/decompile.py` | 从模板数据反生成源码 |
 
 ## 两个示例的区别
 
@@ -50,6 +51,29 @@ python3 examples/compile.py examples/light_ray.rune
 | `examples/demo.py` | 查内置模板数据 | 只想看结构化结果时用 |
 
 `compile.py` 处理你写的源码；`demo.py` 只展示 `corpus/templates.jsonl` 里已有的两个咒语，不读源码。
+
+## 认识哪些咒语
+
+```bash
+python3 tools/catalog.py
+```
+
+| 深度 | 数量 | 含义 |
+|---|---|---|
+| `full` | 1 | 有魔文数 + 结构（光射线） |
+| `partial` | 2 | 有魔文数，无结构（丢冰块、闪光术） |
+| `ring_only` | 10 | 仅环数 |
+| `name_only` | 12 | 仅名字 |
+
+**25 个咒语里，只有 1 个能完整编译。** 这不是进度，是语料边界——其余 24 个的结构原文没写。
+
+## 往返
+
+```bash
+python3 tools/decompile.py
+```
+
+从 `corpus/templates.jsonl` 反生成源码。`create` 未知的咒语会被拒绝，不编造魔文名。
 
 ## 引用约定
 
