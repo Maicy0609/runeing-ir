@@ -1,23 +1,27 @@
 """魔法源语言：解析。
 
-人类写的形态（`.rune` 文件）：
+写法（一行定义一个咒语）：
 
-    咒语 光射线 {
-      元素 光
-      魔文 发光 点 发射 发射
-    }
+    光射线 : 光 = 发光 → 点 → 发射 → 发射
 
-**源码里没有连笔。** 连笔是 (魔文对 × 魔女) 的私有表，由施法者补齐，
-不进源码、不进 IR（第 17 章）。
+规则：
+
+- ``名字 : 元素 = 魔文序列``
+- 魔文之间用 ``→`` 连接，方向即连笔方向（末尾 → 开头，第 16 章）
+- ``魔文 × 3`` 表示该魔文重复 3 次
+- ``#`` 之后是注释
+- 一个文件只放一个咒语
+
+**源码里没有连笔的具体形状。** 连笔是 (魔文对 × 魔女) 的私有表，
+由施法者补齐，不进源码、不进 IR（第 17 章）。
 """
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
 
-_NAME = re.compile(r"咒语\s+(\S+)\s*\{")
-_ELEMENT = re.compile(r"元素\s+(\S+)")
-_RUNES = re.compile(r"魔文\s+(.+)")
+_DEF = re.compile(r"^([^\s:#=]+)\s*:\s*([^\s=#]+)\s*=\s*(.+)$")
+_TIMES = re.compile(r"^(.+?)\s*[×xX*]\s*(\d+)$")
 
 
 @dataclass(frozen=True)
@@ -37,27 +41,40 @@ class ParseError(ValueError):
     """源码格式错误。"""
 
 
+def _expand(part: str) -> list[str]:
+    m = _TIMES.match(part)
+    if not m:
+        return [part]
+    rune, times = m.group(1).strip(), int(m.group(2))
+    if not rune:
+        raise ParseError(f"`×` 前缺少魔文：{part}")
+    return [rune] * times
+
+
 def parse(text: str) -> SpellSource:
+    body: str | None = None
     name: str | None = None
     element: str | None = None
-    runes: tuple[str, ...] = ()
 
     for raw in text.splitlines():
         line = raw.split("#", 1)[0].strip()
         if not line:
             continue
-        if m := _NAME.search(line):
-            name = m.group(1)
-        elif m := _ELEMENT.search(line):
-            element = m.group(1)
-        elif m := _RUNES.search(line):
-            runes = tuple(m.group(1).split())
+        m = _DEF.match(line)
+        if not m:
+            raise ParseError(f"无法解析：{line}")
+        if body is not None:
+            raise ParseError("一个文件只允许一个咒语")
+        name, element, body = m.group(1), m.group(2), m.group(3)
 
-    if name is None:
-        raise ParseError("缺少 `咒语 <名字> {`")
-    if element is None:
-        raise ParseError("缺少 `元素 <元素名>`")
-    if not runes:
-        raise ParseError("缺少 `魔文 <魔文…>`")
+    if name is None or element is None or body is None:
+        raise ParseError("缺少 `名字 : 元素 = 魔文序列`")
 
-    return SpellSource(name=name, element=element, runes=runes)
+    runes: list[str] = []
+    for part in body.split("→"):
+        part = part.strip()
+        if not part:
+            raise ParseError("`→` 两侧不能为空")
+        runes.extend(_expand(part))
+
+    return SpellSource(name=name, element=element, runes=tuple(runes))
