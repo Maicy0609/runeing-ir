@@ -27,8 +27,9 @@ python3 examples/compile.py my.rune
 [解析] 咒语 光射线，4 个魔文
 [信息] C_OK: 容量 4/10：常态
 [信息] C_ELEMENT: 元素 光：有实例
-[IR] IR(kind='projectile', element='光', create=('发光', '点'), emit=('发射', '发射'))
-[求值] Value(element='光', form='projectile')
+[IR] element=光 form=projectile work=4
+     apply: (发光+点) |> (发射+发射)
+[求值] Value(element='光', form='projectile', work=4, pipeline=('发光+点', '发射+发射'))
 ```
 
 四行分别对应四个阶段：**解析 -> 检查 -> 降级 -> 求值**。
@@ -128,7 +129,18 @@ python3 examples/compile.py my.rune
 Projectile<E> = create_E(2) + emit(2)
 ```
 
-否则降级为 `generic`，只保留魔文序列，不做结构判断。
+IR 用 `Apply(emit, create)` 表达「emit 作用于 create」，不是两个并列字段。
+
+其余形状降级为 `opaque`，只保留魔文序列，不做结构判断。**`opaque` 表示结构未识别，不等于无效果。**
+
+两种形态的求值差异：
+
+| 咒语 | IR | 求值 |
+|---|---|---|
+| 光射线 | `form=projectile`，`apply=(发光+点) \|> (发射+发射)` | `pipeline=('发光+点','发射+发射')` |
+| 闪光术 | `form=opaque`，`apply=None` | `pipeline=()` |
+
+`pipeline` 非空说明经过 emit 段，空说明没有。这是「有 emit」与「无 emit」在求值结果里的可追溯差异。
 
 ---
 
@@ -149,7 +161,7 @@ Projectile<E> = create_E(2) + emit(2)
 
 ## 5. 示例
 
-### 5.1 成功
+### 5.1 成功：投射
 
 ```
 光射线 : 光 = 发光 -> 点 -> 发射 -> 发射
@@ -159,11 +171,30 @@ Projectile<E> = create_E(2) + emit(2)
 [解析] 咒语 光射线，4 个魔文
 [信息] C_OK: 容量 4/10：常态
 [信息] C_ELEMENT: 元素 光：有实例
-[IR] IR(kind='projectile', element='光', create=('发光', '点'), emit=('发射', '发射'))
-[求值] Value(element='光', form='projectile')
+[IR] element=光 form=projectile work=4
+     apply: (发光+点) |> (发射+发射)
+[求值] Value(element='光', form='projectile', work=4, pipeline=('发光+点', '发射+发射'))
 ```
 
-### 5.2 容量超限
+### 5.2 成功：无 emit
+
+`examples/flash.rune`
+
+```
+闪光术 : 光 = 发光 -> 点
+```
+
+```
+[解析] 咒语 闪光术，2 个魔文
+[信息] C_OK: 容量 2/10：常态
+[信息] C_ELEMENT: 元素 光：有实例
+[IR] element=光 form=opaque work=2
+[求值] Value(element='光', form='opaque', work=2, pipeline=())
+```
+
+两个咒语元素相同、都是光系，求值却不同——因为一个有 emit 段，一个没有。
+
+### 5.3 容量超限
 
 ```
 巨型光球 : 光 = 发光 -> 点 -> 发射 -> 发射 -> 旋转 * 11
@@ -176,7 +207,7 @@ Projectile<E> = create_E(2) + emit(2)
 [终止] 编译失败，不生成 IR
 ```
 
-### 5.3 元素不存在
+### 5.4 元素不存在
 
 ```
 雷击 : 雷 = 发光 -> 点 -> 发射 -> 发射

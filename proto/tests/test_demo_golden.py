@@ -17,7 +17,7 @@ EXPECTED = """\
   create: ['发光', '点'] [推断]
   emit: ['发射-1', '发射-2']
   已知魔文: 4/4
-  求值: Value(element='光', form='projectile')
+  求值: Value(element='光', form='projectile', work=4, pipeline=('发光+点', '发射-1+发射-2'))
   容量(4): unknown
 
 === 示例 2：残缺实例 ===
@@ -28,7 +28,7 @@ EXPECTED = """\
   create: None [unknown]
   emit: ['发射-1', '发射-2']
   已知魔文: 2/4
-  求值: Value(element='冰', form='projectile')
+  求值: Value(element='冰', form='projectile', work=4, pipeline=())
   容量(4): unknown
 
 === 示例 3：不认识的咒语 ===

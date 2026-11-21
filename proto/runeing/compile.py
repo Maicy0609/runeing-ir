@@ -17,19 +17,38 @@ from .types import element_status
 
 @dataclass(frozen=True)
 class Diagnostic:
-    level: str  # "错误" | "警告"
+    level: str  # "错误" | "警告" | "信息"
     code: str
     message: str
+
+
+@dataclass(frozen=True)
+class Apply:
+    """``emit`` 作用于 ``create`` 的结果。
+
+    这是 IR 里唯一的结构关系，替代此前并列的 ``create`` / ``emit`` 字段。
+    """
+
+    emit: tuple[str, ...]
+    create: tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class IR:
     """中间表示：只保留结构决定的量。"""
 
-    kind: str  # "projectile" | "generic"
     element: str
-    create: tuple[str, ...]
-    emit: tuple[str, ...]
+    runes: tuple[str, ...]
+    apply: Apply | None
+
+    @property
+    def work(self) -> int:
+        """结构工作量：目前唯一有依据的度量是魔文个数。"""
+        return len(self.runes)
+
+    @property
+    def form(self) -> str:
+        return "projectile" if self.apply is not None else "opaque"
 
 
 def check(src: SpellSource) -> list[Diagnostic]:
@@ -67,9 +86,27 @@ def has_error(diags: list[Diagnostic]) -> bool:
 def lower(src: SpellSource) -> IR:
     """降级到 IR。4 魔文且后两段为发射时，识别为投射模板。"""
     if src.rune_count == 4 and src.runes[2:] == ("发射", "发射"):
-        return IR(kind="projectile", element=src.element, create=src.runes[:2], emit=src.runes[2:])
-    return IR(kind="generic", element=src.element, create=src.runes, emit=())
+        return IR(
+            element=src.element,
+            runes=src.runes,
+            apply=Apply(emit=src.runes[2:], create=src.runes[:2]),
+        )
+    return IR(element=src.element, runes=src.runes, apply=None)
 
 
 def evaluate(ir: IR) -> Value:
-    return Value(element=ir.element, form=ir.kind)
+    """求值：消费 ``apply`` 的结构，而不只是读 ``form``。
+
+    ``pipeline`` 让「有 emit」与「无 emit」在结果里可区分：
+    投射咒语返回 `(create, emit)` 两段，其余返回空。
+    """
+    if ir.apply is None:
+        return Value(element=ir.element, form="opaque", work=ir.work)
+    create = "+".join(ir.apply.create)
+    emit = "+".join(ir.apply.emit)
+    return Value(
+        element=ir.element,
+        form="projectile",
+        work=ir.work,
+        pipeline=(create, emit),
+    )

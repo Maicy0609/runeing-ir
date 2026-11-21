@@ -35,7 +35,11 @@ def render(path: Path) -> tuple[str, int]:
         return "\n".join(lines), 1
 
     ir = lower(src)
-    lines.append(f"[IR] {ir}")
+    lines.append(f"[IR] element={ir.element} form={ir.form} work={ir.work}")
+    if ir.apply is not None:
+        create = "+".join(ir.apply.create)
+        emit = "+".join(ir.apply.emit)
+        lines.append(f"     apply: ({create}) |> ({emit})")
     lines.append(f"[求值] {evaluate(ir)}")
     return "\n".join(lines), 0
 

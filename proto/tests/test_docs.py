@@ -14,7 +14,7 @@ def _first_code_line(path: Path) -> str:
 
 def test_language_doc_contains_runnable_examples() -> None:
     doc = (ROOT / "docs" / "language.md").read_text(encoding="utf-8")
-    for name in ("light_ray.rune", "oversize.rune", "bad_element.rune"):
+    for name in ("light_ray.rune", "flash.rune", "oversize.rune", "bad_element.rune"):
         code = _first_code_line(ROOT / "examples" / name)
         assert code in doc, f"examples/{name} 的源码没有出现在 docs/language.md 中"
 

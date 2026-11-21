@@ -10,9 +10,8 @@
 
     Projectile<E> = create_E(2) + emit(2)
 
-- ``create_E``：元素特异，光射线为“发光 + 点”（语义有原文，拆分是推断）；
-  丢冰块的具体魔文原文未给，记为 ``None``。
-- ``emit``：跨元素共享的两个魔文。
+- ``create_E``：元素特异；丢冰块的具体魔文原文未给，记为 ``None``
+- ``emit``：跨元素共享的两个魔文
 
 推翻条件见 ``tests/test_projectile.py``。
 """
@@ -25,10 +24,16 @@ from .core import Rune, Source
 
 @dataclass(frozen=True)
 class Value:
-    """求值结果的最小载体：效果只按 (元素, 形态) 区分。"""
+    """求值结果。
+
+    ``work`` 是结构工作量，目前唯一有文本依据的度量是魔文个数。
+    ``pipeline`` 记录求值经过的段，用于区分「有 emit」与「无 emit」。
+    """
 
     element: str
     form: str
+    work: int = 0
+    pipeline: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -57,5 +62,14 @@ class Projectile:
         return (self.create or ()) + self.emit
 
     def value(self) -> Value:
-        """求值：只保留 (元素, 形态)，不保留具体魔文。"""
-        return Value(element=self.element, form="projectile")
+        """求值：保留元素、形态、工作量与段落路径。"""
+        if self.create is None:
+            return Value(element=self.element, form="projectile", work=self.declared_runes)
+        create = "+".join(r.name for r in self.create)
+        emit = "+".join(r.name for r in self.emit)
+        return Value(
+            element=self.element,
+            form="projectile",
+            work=self.declared_runes,
+            pipeline=(create, emit),
+        )

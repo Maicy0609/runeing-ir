@@ -5,6 +5,7 @@ from runeing.compile import check, evaluate, has_error, lower
 from runeing.lang import ParseError, parse
 
 GOOD = "光射线 : 光 = 发光 -> 点 -> 发射 -> 发射"
+FLASH = "闪光术 : 光 = 发光 -> 点"
 OVERSIZE = "巨型光球 : 光 = 发光 -> 点 -> 发射 -> 发射 -> 旋转 * 11"
 
 
@@ -71,16 +72,36 @@ def test_check_unknown_capacity_is_warning_not_error() -> None:
 
 def test_lower_to_projectile() -> None:
     ir = lower(parse(GOOD))
-    assert ir.kind == "projectile"
-    assert ir.create == ("发光", "点")
-    assert ir.emit == ("发射", "发射")
+    assert ir.form == "projectile"
+    assert ir.apply is not None
+    assert ir.apply.create == ("发光", "点")
+    assert ir.apply.emit == ("发射", "发射")
+    assert ir.work == 4
 
 
 def test_lower_generic_when_shape_differs() -> None:
-    assert lower(parse("怪东西 : 光 = 发光 -> 点 -> 发光")).kind == "generic"
+    ir = lower(parse("怪东西 : 光 = 发光 -> 点 -> 发光"))
+    assert ir.form == "opaque"
+    assert ir.apply is None
+    assert ir.work == 3
 
 
-def test_evaluate() -> None:
+def test_evaluate_consumes_structure() -> None:
     value = evaluate(lower(parse(GOOD)))
     assert value.element == "光"
     assert value.form == "projectile"
+    assert value.work == 4
+    assert value.pipeline == ("发光+点", "发射+发射")
+
+
+def test_ray_and_flash_differ() -> None:
+    """M1 验收：光射线与闪光术的求值必须不同，且差异来自有无 emit。"""
+    ray = evaluate(lower(parse(GOOD)))
+    flash = evaluate(lower(parse(FLASH)))
+
+    assert ray.form != flash.form
+    assert ray.work != flash.work
+    assert ray.pipeline != flash.pipeline
+    # 差异可追溯：投射有 emit 段，闪光术没有
+    assert ray.pipeline and not flash.pipeline
+    assert flash.form == "opaque"
